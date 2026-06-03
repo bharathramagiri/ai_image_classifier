@@ -27,7 +27,12 @@ custom_classes = []
 # Check if you successfully trained your custom model
 if os.path.exists("my_custom_brain.keras"):
     print("Loading your Custom AI Brain...")
-    models["custom"] = tf.keras.models.load_model("my_custom_brain.keras")
+   # --- Change your model loading section to look like this ---
+
+import tf_keras
+
+# Load your custom trained model using the explicit legacy engine
+model = tf_keras.models.load_model('my_custom_brain.keras')
     
     # Load the dictionary of words it knows
     with open("class_names.txt", "r") as f:

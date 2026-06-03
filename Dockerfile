@@ -1,7 +1,7 @@
 # Use the official Python image
 FROM python:3.9
 
-# SECURITY FIX: Create a standard unprivileged user (UID 1000) required by Hugging Face
+# SECURITY FIX: Create a standard unprivileged user
 RUN useradd -m -u 1000 user
 USER user
 
@@ -9,19 +9,19 @@ USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
 
-# Create the working directory inside the new user's home folder
+# Create the working directory
 WORKDIR $HOME/app
 
-# Copy the requirements file and grant ownership to the user
+# Copy the requirements file and grant ownership
 COPY --chown=user requirements.txt .
 
-# Install dependencies
+# Install dependencies (This will now grab tensorflow-cpu and tf-keras!)
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# Copy all your project files and grant ownership to the user
+# Copy all your project files
 COPY --chown=user . .
 
-# Force TensorFlow to use the correct legacy rules to read your custom .keras file
+# Force TensorFlow to use the legacy tf-keras package we just installed
 ENV TF_USE_LEGACY_KERAS=1
 
 # Start the server on port 7860

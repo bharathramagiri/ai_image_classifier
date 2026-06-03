@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise AI Analytics Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #0d0e12; color: #f3f4f6; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        header { background-color: #16171d; border-bottom: 1px solid #242631; padding: 0 30px; height: 70px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .brand-logo { width: 24px; height: 24px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 6px; }
+        nav { display: flex; gap: 8px; }
+        nav button { background: none; border: none; color: #9ca3af; padding: 8px 16px; font-size: 0.9rem; font-weight: 500; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+        nav button.active, nav button:hover { background-color: #242631; color: #ffffff; }
+        .user-profile { width: 36px; height: 36px; background-color: #242631; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; color: #a855f7; border: 1px solid #374151; }
+
+        .tab-content { display: none; flex: 1; overflow: hidden; }
+        #view-dashboard.active { display: grid; grid-template-columns: 1fr 400px; }
+        #view-analytics.active, #view-models.active, #view-settings.active { display: flex; flex-direction: column; }
+        .generic-view { padding: 40px; gap: 20px; overflow-y: auto; }
+
+        .workspace { padding: 30px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; background-color: #0d0e12; }
+        .section-title { font-size: 1.4rem; font-weight: 600; color: #ffffff; }
+        .drop-zone-wrapper { background-color: #16171d; border: 1px solid #242631; border-radius: 12px; padding: 40px; flex: 1; display: flex; align-items: center; justify-content: center; }
+        #drop-zone { width: 100%; height: 100%; min-height: 350px; border: 2px dashed #374151; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; background-size: contain; background-repeat: no-repeat; background-position: center; position: relative; }
+        #drop-zone:hover { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.02); }
+        .drop-icon { font-size: 2.5rem; color: #4b5563; margin-bottom: 16px; }
+        .drop-text { font-size: 1rem; color: #9ca3af; font-weight: 500; }
+        .drop-subtext { font-size: 0.85rem; color: #4b5563; margin-top: 6px; }
+
+        .logs-panel { background-color: #16171d; border: 1px solid #242631; border-radius: 12px; padding: 20px; }
+        .logs-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; text-align: left; }
+        .logs-table th { color: #4b5563; font-weight: 500; padding-bottom: 10px; border-bottom: 1px solid #242631; }
+        .logs-table td { padding: 12px 0; color: #9ca3af; border-bottom: 1px solid #1f2029; }
+        .status-badge { background-color: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+        .badge-error { color: #ef4444; background-color: rgba(239, 68, 68, 0.1); }
+        .badge-custom { color: #a855f7; background-color: rgba(168, 85, 247, 0.1); }
+
+        .sidebar { background-color: #16171d; border-left: 1px solid #242631; padding: 30px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+        .widget-card { background-color: #1c1d24; border: 1px solid #242631; border-radius: 10px; padding: 20px; }
+        .widget-header { font-size: 0.8rem; font-weight: 600; color: #6b7280; letter-spacing: 1px; margin-bottom: 12px; }
+        .main-prediction-text { font-size: 1.8rem; font-weight: 600; color: #ffffff; margin-bottom: 4px; }
+        .metric-value { font-size: 1.5rem; font-weight: 600; color: #6366f1; }
+        .confidence-container { margin-top: 15px; }
+        .confidence-header-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; }
+        .progress-bar-bg { width: 100%; height: 6px; background-color: #242631; border-radius: 3px; overflow: hidden; }
+        .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); transition: width 0.4s ease; }
+        
+        .analytics-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 10px; }
+        .kpi-card { background-color: #16171d; border: 1px solid #242631; border-radius: 12px; padding: 25px; text-align: center; }
+        .kpi-card h4 { color: #6b7280; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .kpi-value { color: #ffffff; font-size: 2.2rem; font-weight: 600; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .chart-container { background-color: #16171d; border: 1px solid #242631; border-radius: 12px; padding: 20px; position: relative; height: 350px;}
+        
+        .btn-action { background-color: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .btn-action:hover { background-color: #4f46e5; }
+        .btn-danger { background-color: #ef4444; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .btn-inactive { background-color: #374151; color: #9ca3af; }
+        .btn-custom { background-color: #a855f7; }
+        .btn-custom:hover { background-color: #9333ea; }
+        
+        .placeholder-card { background-color: #16171d; border: 1px solid #242631; border-radius: 12px; padding: 30px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .card-active { border-color: #10b981; }
+        .card-active-custom { border-color: #a855f7; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin-top: 15px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #6366f1; cursor: pointer; margin-top: -8px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #374151; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand"><div class="brand-logo"></div><span>NEXUS // VISION</span></div>
+        <nav>
+            <button class="nav-btn active" data-target="view-dashboard">Dashboard</button>
+            <button class="nav-btn" data-target="view-analytics">Analytics</button>
+            <button class="nav-btn" data-target="view-models">Models</button>
+            <button class="nav-btn" data-target="view-settings">Settings</button>
+        </nav>
+        <div class="user-profile">AI</div>
+    </header>
+
+    <div id="view-dashboard" class="tab-content active">
+        <div class="workspace">
+            <h1 class="section-title">Image Analysis Core</h1>
+            <div class="drop-zone-wrapper">
+                <div id="drop-zone">
+                    <div class="drop-icon">📥</div>
+                    <p class="drop-text">Drag and drop model assets here</p>
+                    <p class="drop-subtext">Supports PNG, JPG, WEBP up to 10MB</p>
+                    <input type="file" id="file-input" style="display: none;" accept="image/*">
+                </div>
+            </div>
+            <div class="logs-panel">
+                <h3 style="font-size: 1rem; font-weight: 600;">Recent Inferences</h3>
+                <table class="logs-table">
+                    <thead><tr><th>TIMESTAMP</th><th>TARGET OBJECT</th><th>CONFIDENCE SCORE</th><th>STATUS</th></tr></thead>
+                    <tbody id="logs-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="sidebar">
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">Live Telemetry</h2>
+            <div class="widget-card">
+                <div class="widget-header">TOP CLASSIFICATION</div>
+                <div class="main-prediction-text" id="telemetry-label">Awaiting Asset</div>
+                <div class="confidence-container">
+                    <div class="confidence-header-row">
+                        <span style="color: #9ca3af;">Match Confidence</span>
+                        <span id="telemetry-percentage" style="font-weight: 500;">0%</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="telemetry-bar"></div></div>
+                </div>
+            </div>
+            <div class="widget-card">
+                <div class="widget-header">PERFORMANCE TELEMETRY</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div><p style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 2px;">Inference Latency</p><div class="metric-value" id="telemetry-speed">0.000s</div></div>
+                    <div><p style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 2px;">Core Processing Engine</p><p style="font-size: 0.9rem; font-weight: 500; color: #ffffff;" id="telemetry-engine">TensorFlow // CUSTOM</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-analytics" class="tab-content generic-view">
+        <div class="analytics-header">
+            <div><h1 class="section-title">Global Analytics</h1><p style="color: #9ca3af; margin-top: 5px;">Real-time historical model accuracy and object distribution.</p></div>
+            <button class="btn-action btn-danger" onclick="clearHistory()">Clear Data History</button>
+        </div>
+        <div class="kpi-grid">
+            <div class="kpi-card"><h4>Total Assets Scanned</h4><div id="kpi-total" class="kpi-value">0</div></div>
+            <div class="kpi-card"><h4>System Avg Confidence</h4><div id="kpi-avg-conf" class="kpi-value">0%</div></div>
+            <div class="kpi-card"><h4>Primary Target Object</h4><div id="kpi-top-label" class="kpi-value" style="color: #a855f7;">--</div></div>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-container"><canvas id="doughnutChart"></canvas></div>
+            <div class="chart-container"><canvas id="lineChart"></canvas></div>
+        </div>
+    </div>
+
+    <div id="view-models" class="tab-content generic-view">
+        <h1 class="section-title">Model Registry</h1>
+        <p style="color: #9ca3af;">Manage and deploy your neural networks here.</p>
+        
+        <div class="placeholder-card card-active-custom" id="card-custom">
+            <div>
+                <h3 style="color: #ffffff;">Your Custom Brain <span id="badge-custom" class="status-badge badge-custom">Active</span></h3>
+                <p style="color: #9ca3af; margin-top: 10px; font-size: 0.9rem;">Fine-tuned specifically on your custom dataset.</p>
+            </div>
+            <button id="btn-custom" class="btn-action btn-inactive" onclick="swapModel('custom')">Currently Active</button>
+        </div>
+
+        <div class="placeholder-card" id="card-resnet50">
+            <div>
+                <h3 style="color: #ffffff;">ResNet50 <span id="badge-resnet50" class="status-badge" style="display: none;">Active</span></h3>
+                <p style="color: #9ca3af; margin-top: 10px; font-size: 0.9rem;">Pre-trained on ImageNet. Highly accurate for complex everyday objects.</p>
+            </div>
+            <button id="btn-resnet50" class="btn-action" onclick="swapModel('resnet50')">Activate Engine</button>
+        </div>
+
+        <div class="placeholder-card" id="card-mobilenetv2">
+            <div>
+                <h3 style="color: #ffffff;">MobileNetV2 <span id="badge-mobilenetv2" class="status-badge" style="display: none;">Active</span></h3>
+                <p style="color: #9ca3af; margin-top: 10px; font-size: 0.9rem;">Lightweight Architecture. Optimized for extreme speed and low latency.</p>
+            </div>
+            <button id="btn-mobilenetv2" class="btn-action" onclick="swapModel('mobilenetv2')">Activate Engine</button>
+        </div>
+    </div>
+
+    <div id="view-settings" class="tab-content generic-view">
+        <h1 class="section-title">Platform Settings</h1>
+        <p style="color: #9ca3af;">Configure your AI boundaries.</p>
+        <div class="placeholder-card" style="display: block;">
+            <h3 style="color: white; margin-bottom: 5px;">Confidence Threshold: <span id="threshold-display" style="color: #6366f1;">50</span>%</h3>
+            <p style="color: #9ca3af; font-size: 0.85rem;">If the AI's confidence falls below this number, the asset will be flagged as "Rejected".</p>
+            <input type="range" id="confidence-slider" min="1" max="100" value="50">
+        </div>
+    </div>
+
+    <script>
+        let aiHistory = JSON.parse(localStorage.getItem('ai_history_data')) || [];
+        let myDoughnutChart = null;
+        let myLineChart = null;
+        let confidenceThreshold = 50;
+
+        const slider = document.getElementById('confidence-slider');
+        const thresholdDisplay = document.getElementById('threshold-display');
+        slider.addEventListener('input', (e) => {
+            confidenceThreshold = parseInt(e.target.value);
+            thresholdDisplay.innerText = confidenceThreshold;
+        });
+
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+                if(targetId === 'view-analytics') renderCharts();
+            });
+        });
+
+        async function swapModel(modelName) {
+            const formData = new FormData();
+            formData.append('model_name', modelName);
+            try {
+                const response = await fetch('http://127.0.0.1:8000/switch-model', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    ['custom', 'resnet50', 'mobilenetv2'].forEach(mod => {
+                        document.getElementById(`card-${mod}`).classList.remove('card-active', 'card-active-custom');
+                        document.getElementById(`badge-${mod}`).style.display = 'none';
+                        document.getElementById(`btn-${mod}`).innerText = 'Activate Engine';
+                        document.getElementById(`btn-${mod}`).className = mod === 'custom' ? 'btn-action btn-custom' : 'btn-action';
+                    });
+
+                    const activeClass = modelName === 'custom' ? 'card-active-custom' : 'card-active';
+                    document.getElementById(`card-${modelName}`).classList.add(activeClass);
+                    document.getElementById(`badge-${modelName}`).style.display = 'inline-block';
+                    document.getElementById(`btn-${modelName}`).innerText = 'Currently Active';
+                    document.getElementById(`btn-${modelName}`).className = 'btn-action btn-inactive';
+                    
+                    document.getElementById('telemetry-engine').innerText = `TensorFlow // ${modelName.toUpperCase()}`;
+                }
+            } catch (error) {
+                alert("Could not contact AI Brain. Is your Python server running?");
+            }
+        }
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const telemetryLabel = document.getElementById('telemetry-label');
+        const telemetryPercentage = document.getElementById('telemetry-percentage');
+        const telemetryBar = document.getElementById('telemetry-bar');
+        const telemetrySpeed = document.getElementById('telemetry-speed');
+        const logsBody = document.getElementById('logs-body');
+
+        function loadTableHistory() {
+            logsBody.innerHTML = '';
+            if (aiHistory.length === 0) {
+                logsBody.innerHTML = `<tr><td>--</td><td>No data processed yet</td><td>--</td><td><span class="status-badge" style="background: none; color: #4b5563;">Idle</span></td></tr>`;
+                return;
+            }
+            for (let i = aiHistory.length - 1; i >= 0; i--) {
+                const item = aiHistory[i];
+                let statusHtml = `<span class="status-badge">Success</span>`;
+                if (item.status === "Rejected") statusHtml = `<span class="status-badge badge-error">Rejected</span>`;
+                logsBody.innerHTML += `<tr><td>${item.time}</td><td style="color: #ffffff; font-weight: 500;">${item.label}</td><td>${item.confidence}%</td><td>${statusHtml}</td></tr>`;
+            }
+        }
+        loadTableHistory();
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        // FIX: Verify a file exists before triggering the pipeline
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                processAsset(e.target.files[0]);
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#6366f1'; });
+        dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = '#374151');
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.style.borderColor = '#374151'; processAsset(e.dataTransfer.files[0]); });
+
+        async function processAsset(file) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                dropZone.style.backgroundImage = `url('${e.target.result}')`;
+                dropZone.querySelectorAll('p, .drop-icon').forEach(el => el.style.display = 'none');
+            };
+            reader.readAsDataURL(file);
+
+            telemetryLabel.innerText = "Analyzing...";
+            telemetryPercentage.innerText = "--%";
+            telemetryBar.style.width = "0%";
+            telemetryBar.style.background = "linear-gradient(90deg, #6366f1, #a855f7)";
+            
+            const startTime = performance.now();
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/analyze', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                const resultString = data.result;
+                const match = resultString.match(/(.+)\s\((.+)\%\)/);
+                
+                if (match) {
+                    let label = match[1];
+                    const confidence = parseFloat(match[2]);
+                    const totalTime = ((performance.now() - startTime) / 1000).toFixed(3);
+                    let finalStatus = "Success";
+
+                    if (confidence < confidenceThreshold) {
+                        label = "Unknown Object";
+                        finalStatus = "Rejected";
+                        telemetryBar.style.background = "#ef4444"; 
+                    }
+
+                    telemetryLabel.innerText = label;
+                    telemetryPercentage.innerText = `${confidence}%`;
+                    telemetryBar.style.width = `${confidence}%`;
+                    telemetrySpeed.innerText = `${totalTime}s`;
+
+                    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    
+                    aiHistory.push({ label: label, confidence: confidence, time: currentTime, status: finalStatus });
+                    localStorage.setItem('ai_history_data', JSON.stringify(aiHistory));
+                    loadTableHistory();
+                }
+            } catch (error) {
+                telemetryLabel.innerText = "Connection Error";
+                telemetrySpeed.innerText = "0.000s";
+            } finally {
+                // FIX: Instantly clear out the inner file input field value string.
+                // This makes the browser forget the image name immediately, allowing you to upload
+                // another file (even the exact same one) consecutively without needing a page refresh!
+                fileInput.value = '';
+            }
+        }
+
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.borderColor = '#242631';
+
+        function renderCharts() {
+            const validHistory = aiHistory.filter(item => item.status === "Success");
+            const totalScans = aiHistory.length;
+            
+            if (totalScans === 0) {
+                document.getElementById('kpi-total').innerText = "0";
+                document.getElementById('kpi-avg-conf').innerText = "0%";
+                document.getElementById('kpi-top-label').innerText = "--";
+                if (myDoughnutChart) myDoughnutChart.destroy();
+                if (myLineChart) myLineChart.destroy();
+                return;
+            }
+
+            const sumConfidence = aiHistory.reduce((sum, item) => sum + item.confidence, 0);
+            const avgConfidence = (sumConfidence / totalScans).toFixed(1);
+            
+            const labelCounts = {};
+            const timeLabels = [];
+            const confidenceOverTime = [];
+
+            validHistory.forEach(item => { labelCounts[item.label] = (labelCounts[item.label] || 0) + 1; });
+            aiHistory.forEach(item => { timeLabels.push(item.time); confidenceOverTime.push(item.confidence); });
+
+            let topLabel = "--";
+            let maxCount = 0;
+            for (const [label, count] of Object.entries(labelCounts)) { if (count > maxCount) { maxCount = count; topLabel = label; } }
+
+            document.getElementById('kpi-total').innerText = totalScans;
+            document.getElementById('kpi-avg-conf').innerText = avgConfidence + "%";
+            document.getElementById('kpi-top-label').innerText = topLabel;
+
+            if (myDoughnutChart) myDoughnutChart.destroy();
+            if (myLineChart) myLineChart.destroy();
+
+            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+            myDoughnutChart = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: { labels: Object.keys(labelCounts), datasets: [{ data: Object.values(labelCounts), backgroundColor: ['#6366f1', '#a855f7', '#ec4899', '#3b82f6', '#10b981'], borderWidth: 0, hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'System Composition Matrix', color: '#ffffff', font: { size: 16 } }, legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 11 } } } }, cutout: '65%' }
+            });
+
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            myLineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: { labels: timeLabels, datasets: [{ label: 'Confidence Score (%)', data: confidenceOverTime, borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderWidth: 2, fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Confidence Over Time', color: '#ffffff', font: { size: 16 } }, legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        }
+
+        function clearHistory() {
+            if(confirm("Are you sure you want to permanently delete all analytics data?")) {
+                aiHistory = [];
+                localStorage.removeItem('ai_history_data');
+                loadTableHistory();
+                renderCharts();
+            }
+        }
+    </script>
+</body>
+</html>
